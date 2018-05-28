@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"html/template"
+	"html"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -14,6 +14,8 @@ type GPSdata struct {
 	Longitude string
 }
 
+var s GPSdata
+
 func main() {
 	http.HandleFunc("/", handler)
 	http.ListenAndServe(":9090", nil)
@@ -21,13 +23,18 @@ func main() {
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm() //解析参数，默认是不会解析的
-	//fmt.Fprintf(w, "I love GO %s\n", html.EscapeString(r.URL.Path[1:]))
+	fmt.Fprintf(w, "I love GO %s\n", html.EscapeString(r.URL.Path[1:]))
 	if r.Method == "GET" {
 		//fmt.Println("method:", r.Method) //获取请求的方法
 		//fmt.Println("username", r.Form["username"])
 		//fmt.Println("password", r.Form["password"])
-		uploadTemplate := template.Must(template.ParseFiles("welcome.gtpl"))
-		uploadTemplate.Execute(w, nil)
+		//uploadTemplate := template.Must(template.ParseFiles("welcome.gtpl"))
+		//uploadTemplate.Execute(w, nil)
+		result, _ := ioutil.ReadAll(r.Body)
+		//var s GPSdata
+		json.Unmarshal([]byte(result), &s)
+		fmt.Fprintf(w, "Latitude: %s\n", s.Latitude)
+		fmt.Fprintf(w, "Longitude: %s\n", s.Longitude)
 
 		for k, v := range r.Form {
 			fmt.Print("key:", k, "; ")
@@ -63,10 +70,11 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 		//结构已知，解析到结构体
 
-		var s GPSdata
+		//var s GPSdata
 		json.Unmarshal([]byte(result), &s)
 		fmt.Fprintf(w, "Latitude: %s\n", s.Latitude)
 		fmt.Fprintf(w, "Longitude: %s\n", s.Longitude)
 		//fmt.Println(s.ServersID)
 	}
+
 }
