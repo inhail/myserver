@@ -9,7 +9,13 @@ import (
 	"net/http"
 
 	"github.com/gorilla/sessions"
+
 	"golang.org/x/crypto/bcrypt"
+	"golang.org/x/net/context"
+	"google.golang.org/api/option"
+
+	firebase "firebase.google.com/go"
+	// "firebase.google.com/go/auth"
 )
 
 type GPSdata struct {
@@ -33,8 +39,8 @@ func init() {
 	}
 }
 
-var dashboardTemplate = template.Must(template.ParseFiles("dashBoardPage.gtpl"))
-var logUserTemplate = template.Must(template.ParseFiles("logUserPage.gtpl"))
+var dashboardTemplate = template.Must(template.ParseFiles("data/dashBoardPage.gtpl"))
+var logUserTemplate = template.Must(template.ParseFiles("data/logUserPage.gtpl"))
 
 func DashBoardPageHandler(w http.ResponseWriter, r *http.Request) {
 	conditionsMap := map[string]interface{}{}
@@ -130,6 +136,34 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+
+	// testing out firebase
+
+	ctx := context.Background()
+	opt := option.WithCredentialsFile("data/racebook-firebase-admin.json")
+	conf := &firebase.Config{DatabaseURL: "https://racebook-f5190.firebaseio.com/"}
+
+	app, err := firebase.NewApp(ctx, conf, opt)
+	if err != nil {
+		log.Fatalf("error initing app: %v /n", err)
+	}
+
+	client, err := app.Database(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	location := GPSdata{
+		Latitude:  "42.3606434",
+		Longitude: "-71.0876129",
+	}
+
+	if err := client.NewRef("test/locations").Set(ctx, location); err != nil {
+		log.Fatal(err)
+	}
+
+	// - Y.S
+
 	fmt.Println("Server starting, point your browser to localhost:8080/login to start")
 	http.HandleFunc("/login", LoginPageHandler)
 	http.HandleFunc("/dashboard", DashBoardPageHandler)
